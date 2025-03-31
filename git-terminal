@@ -1,0 +1,49 @@
+autoload -Uz compinit && compinit
+
+
+# Define colors
+MAGENTA="%F{magenta}"
+YELLOW="%F{yellow}"
+LIGHT_BLUE="%F{blue}"
+LIGHT_GRAY="%F{lightgray}"
+CYAN="%F{cyan}"
+LIGHT_GREEN="%F{green}"
+RED="%F{red}"
+LIGHT_RED="%F{red}"
+VIOLET="%F{magenta}"
+WHITE="%F{white}"
+RESET="%f"  # Reset color
+
+# Function to get Git branch information
+get_git_branch() {
+  local git_branch
+  git_branch=$(git symbolic-ref --short HEAD 2>/dev/null)
+  # git_branch=$(git branch 2>/dev/null | sed -n -e 's/^\* \(.*\)/\1/p')  # Extract branch name from git branch output
+
+  if [[ -n "$git_branch" ]]; then
+    local git_status
+    git_status=$(git status --porcelain 2>/dev/null)
+    local branch_color="$LIGHT_GREEN"
+
+    if [[ "$git_status" == *"?? "* ]]; then
+      branch_color="$LIGHT_GRAY"  # untracked files
+    elif [[ "$git_status" == *"A "* || "$git_status" == *"M "* ]]; then
+      branch_color="$CYAN"  # staged files
+    elif [[ "$git_status" == *" M "* ]]; then
+      branch_color="$LIGHT_RED"  # dirty repository
+    elif [[ "$git_status" == *"S "* ]]; then
+      branch_color="$YELLOW"  # stashed files
+    fi
+
+    echo "${branch_color}[${git_branch}]${RESET}"
+  fi
+}
+
+# Refresh the prompt before each command (precmd hook)
+autoload -U add-zsh-hook
+add-zsh-hook precmd() {
+  # Force the prompt to be updated dynamically with git branch
+  export PROMPT="$LIGHT_GREEN%n$RESET$LIGHT_GREEN@$RESET $LIGHT_BLUE%~ $(get_git_branch) $VIOLET\$ $WHITE"
+}
+
+setopt PROMPT_SUBST
